@@ -1,0 +1,8 @@
+_base_: base.yaml
+out_dir: runs/stage2
+model:
+  quality_mode: calibrated
+train:
+  epochs: 30
+  batch_size: 6
+  lr: 3.0e-4

@@ -1,0 +1,10 @@
+_base_: base.yaml
+out_dir: runs/student
+student:
+  backbone: convnext_tiny     # try mobilenetv3_large_100 for the lightweight variant
+  temperature: 6.0            # "d6" in Figure 1
+  alpha: 0.7                  # weight on the soft (teacher-matching) term
+train:
+  epochs: 20
+  batch_size: 6
+  lr: 3.0e-4

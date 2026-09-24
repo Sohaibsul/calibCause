@@ -1,0 +1,54 @@
+# Shared defaults. Stage configs inherit via `_base_: base.yaml`.
+seed: 42
+device: auto            # auto | cuda | cpu
+out_dir: runs/base
+
+data:
+  root: ""              # prefix prepended to relative image_path entries in the CSVs
+  image_size: 384
+  train_csv: data/splits/train.csv
+  val_csv:   data/splits/val.csv
+  test_csv:  data/splits/test.csv
+  # external test-only sets (QGDR protocol)
+  idrid_csv:     data/splits/idrid.csv
+  deepdrid_csv:  data/splits/deepdrid.csv
+  # Stage 1
+  ssl_csv:        data/splits/ssl_pool.csv
+  eyeq_train_csv: data/splits/eyeq_train.csv
+  eyeq_val_csv:   data/splits/eyeq_val.csv
+
+model:
+  backbone: convnext_tiny          # swap to swin_tiny_patch4_window7_224 for the QGDR backbone
+  quality_backbone: convnext_tiny
+  pretrained: true
+  embed_dim: 256
+  proj_dim: 384
+  n_envs: 3
+  use_causal: true                 # Module 1
+  use_env_disc: true               # Module 1
+  freeze_quality: true             # quality encoder is frozen after Stage 1
+  gate_temperature: 1.0
+  quality_mode: calibrated         # calibrated (Fix 1) | labelfree (Module 3)
+  quality_encoder_ckpt: runs/stage1/quality_encoder.pt
+  quality_head_ckpt:    runs/stage1/quality_head.pt
+
+train:
+  epochs: 30
+  batch_size: 6
+  num_workers: 6
+  lr: 3.0e-4
+  lr_backbone_mult: 0.1
+  weight_decay: 0.05
+  amp: true
+  clip_grad: 5.0
+  label_smoothing: 0.05
+  ordinal_weight: 0.5
+  class_weighted_loss: true
+  balanced_sampler: false
+  # Module 1 adversarial schedule
+  env_weight: 0.3
+  env_lambda: 1.0
+  adv_warmup_epochs: 1
+  # gate health
+  gate_entropy_weight: 0.05
+  gate_target_entropy: 0.6

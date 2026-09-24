@@ -1,0 +1,14 @@
+runs/
+*.pt
+*.npz
+__pycache__/
+*.pyc
+.venv/
+data/*.jpg
+data/*.png
+*.egg-info/
+.ipynb_checkpoints/
+.vscode/
+*.log
+*.zip
+*.pdf

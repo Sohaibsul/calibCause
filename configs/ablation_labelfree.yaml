@@ -1,0 +1,7 @@
+# Module 3: identical to stage2_moe.yaml except the gate is driven by the raw
+# self-supervised score. The accuracy delta vs stage2_moe is the reported
+# "cost of removing label dependency".
+_base_: stage2_moe.yaml
+out_dir: runs/ablation_labelfree
+model:
+  quality_mode: labelfree

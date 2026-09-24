@@ -1,0 +1,11 @@
+_base_: base.yaml
+out_dir: runs/stage1
+train:
+  epochs: 15
+  batch_size: 6
+  lr: 1.0e-4
+  weight_decay: 0.01
+  rank_weight: 0.5
+calibration:
+  epochs: 10
+  lr: 1.0e-3

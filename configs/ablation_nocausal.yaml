@@ -1,0 +1,6 @@
+# Module 1 ablation: quality-gated MoE without the environment-invariant block.
+_base_: stage2_moe.yaml
+out_dir: runs/ablation_nocausal
+model:
+  use_causal: false
+  use_env_disc: false
