@@ -52,3 +52,9 @@ train:
   # gate health
   gate_entropy_weight: 0.05
   gate_target_entropy: 0.6
+  # dataset-wide MoE load-balancing (reviewer fix for the vascular-expert
+  # routing collapse seen in figures/07_routing/routing_share.png).
+  # 0.0 = off (reproduces all existing runs exactly). A new run that is meant
+  # to fix the routing collapse should set this to something like 0.1-0.3 in
+  # a config override (e.g. stage2_moe.yaml or an --opt train.load_balance_weight=0.2).
+  load_balance_weight: 0.0

@@ -1,0 +1,38 @@
+# Single-variable follow-up to stage2_moe_strong_invariance.yaml (2026-09-30).
+#
+# That run confounded THREE changed knobs at once (env_weight, env_lambda,
+# adv_warmup_epochs) together with the load_balance_loss fix, and produced
+# two findings: (1) no real LOEO-EyePACS QWK improvement (0.5204 vs 0.5241,
+# flat), and (2) the MoE gate collapsed to a constant, input-independent
+# output (std==0.0 across genuinely diverse images) -- caught via
+# gradcam_index.csv, root-caused as a training-dynamics collapse (not a
+# quality-branch or architecture bug), and fixed with a variance-floor term
+# added to load_balance_loss() in src/losses.py (verified numerically
+# 2026-09-30 against the exact real degenerate vector).
+#
+# This config isolates ONE variable: env_weight/env_lambda/adv_warmup_epochs
+# are reverted to the ORIGINAL gentle values from stage2_moe.yaml (0.3/1.0/1)
+# -- i.e. do NOT push the adversary harder this time -- and the ONLY change
+# from stage2_moe.yaml is the now-fixed load_balance_loss (weight 0.2).
+#
+# Purpose: find out whether the gate collapse was caused specifically by the
+# strengthened adversarial pressure (representation-collapse hypothesis), or
+# whether load_balance_loss can trigger it even with gentle adversarial
+# settings. Also re-checks, independently of adversarial strength, whether
+# fixing vascular-expert routing (reviewer comment 5) changes real held-out
+# QWK at all.
+#
+# Cold restart from scratch, 30 epochs -- same protocol/budget as every other
+# comparison run in this project, so results stay comparable.
+_base_: base.yaml
+out_dir: runs/stage2_balanced_gentle
+model:
+  quality_mode: calibrated
+train:
+  epochs: 30
+  batch_size: 6
+  lr: 3.0e-4
+  env_weight: 0.3            # reverted to original gentle value (was 0.6 in strong_invariance)
+  env_lambda: 1.0             # reverted to original gentle value (was 2.0 in strong_invariance)
+  adv_warmup_epochs: 1         # reverted to original gentle value (was 2 in strong_invariance)
+  load_balance_weight: 0.2    # kept -- the ONLY thing that differs from stage2_moe.yaml

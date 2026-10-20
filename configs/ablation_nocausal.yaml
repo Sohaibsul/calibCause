@@ -1,4 +1,9 @@
-# Module 1 ablation: quality-gated MoE without the environment-invariant block.
+# Reviewer fix (comment 1): this ablation is evaluated under leave-one-
+# environment-out (LOEO), not only in-domain. Tags: nocausal_loeo_heldout_<env>.
+# Module 1 ablation: quality-gated MoE WITHOUT the environment-invariant block
+# (no causal transform, no adversarial environment discriminator). Everything
+# else is identical to stage2_moe.yaml (30 epochs, cold start, same optimizer),
+# so the held-out QWK gap vs the full model (EyePACS 0.5241) isolates Module 1.
 _base_: stage2_moe.yaml
 out_dir: runs/ablation_nocausal
 model:

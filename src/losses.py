@@ -56,6 +56,55 @@ def entropy_regularizer(gate_w: torch.Tensor, target_entropy: float = 0.6) -> to
     return F.relu(torch.tensor(target_entropy, device=gate_w.device) - ent)
 
 
+def load_balance_loss(gate_w: torch.Tensor) -> torch.Tensor:
+    """Dataset-wide load-balancing for the MoE gate (added 2026-09, reviewer
+    comment: "the vascular expert seems useless -- it's in Fig 4A but doesn't
+    appear in the routing chart").
+
+    `entropy_regularizer` above only constrains the entropy of each *individual*
+    sample's gate distribution; this term originally only constrained the
+    *batch-mean* usage per expert. Both together turned out to have a shared
+    blind spot, confirmed empirically (2026-09-30): a gate that outputs the
+    exact same near-uniform vector for every single image -- regardless of
+    the image -- trivially satisfies both (mean usage is uniform by
+    construction, and per-sample entropy is high), while doing zero actual
+    per-image routing. That is a *third*, worse collapse mode than the
+    all-mass-on-one-expert collapse this loss was written to fix: the gate
+    became completely input-independent. Caught via the gate_* columns in
+    gradcam_index.csv all having std == 0.0 across a diverse batch (quality
+    scores in that same batch ranged 0.10-0.99, so the input was not
+    degenerate -- the gate's response to it was).
+
+    Fix: add an explicit per-expert *variance-across-the-batch* floor. A
+    constant/near-constant gate output has ~zero variance for every expert,
+    so this term is large exactly in the failure case above, and ~zero once
+    the gate is genuinely responding differently to different images (which
+    is also compatible with -- not opposed to -- the batch-mean staying
+    balanced). This is a variance-floor penalty, not a Switch-Transformer-
+    style hard-count term, because the hard-count term was checked
+    analytically and shown to have the *same* blind spot in this specific
+    case (a one-hot argmax with a near-uniform softmax lands within noise of
+    that loss's own theoretical minimum -- see REVIEWER_FIXES.md 2026-09-30
+    entry for the derivation), so it would not have caught this.
+
+    gate_w: (B, n_experts) softmax gate weights for a batch.
+    """
+    n_experts = gate_w.shape[-1]
+    mean_usage = gate_w.mean(dim=0)                       # (n_experts,)
+    target = torch.full_like(mean_usage, 1.0 / n_experts)
+    balance_term = ((mean_usage - target) ** 2).sum()
+
+    # anti-collapse: each expert's gate weight should vary meaningfully
+    # across a batch of different images. min_var is a soft floor, not a
+    # hard target -- once variance clears it there's no further reward for
+    # pushing it higher, so this doesn't fight the balance term above.
+    min_var = 0.01
+    per_expert_var = gate_w.var(dim=0, unbiased=False)     # (n_experts,)
+    diversity_term = F.relu(min_var - per_expert_var).sum()
+
+    return balance_term + diversity_term
+
+
 def distillation_loss(student_logits: torch.Tensor, teacher_logits: torch.Tensor,
                       target: torch.Tensor, T: float = 6.0, alpha: float = 0.7,
                       hard_loss_fn=None) -> dict:

@@ -1,6 +1,8 @@
-# Module 3: identical to stage2_moe.yaml except the gate is driven by the raw
-# self-supervised score. The accuracy delta vs stage2_moe is the reported
-# "cost of removing label dependency".
+# Reviewer fix (comment 1): this ablation is evaluated under leave-one-
+# environment-out (LOEO), not only in-domain. Tags: labelfree_loeo_heldout_<env>.
+# Module 3 ablation: identical to stage2_moe.yaml except the gate is driven by
+# the raw self-supervised quality score instead of the calibrated one. The QWK
+# delta vs the full model is the reported "cost of removing label dependency".
 _base_: stage2_moe.yaml
 out_dir: runs/ablation_labelfree
 model:

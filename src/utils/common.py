@@ -73,8 +73,23 @@ def get_logger(name: str, log_dir: str | None = None) -> logging.Logger:
 
 
 def save_checkpoint(state: dict, path: str):
+    import time as _time
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    torch.save(state, path)
+    # atomic write + retry (2026-10-06: truncated _best.pt after "unexpected pos ... vs ...")
+    tmp = path + ".tmp"
+    last_err = None
+    for attempt in range(3):
+        try:
+            torch.save(state, tmp)
+            os.replace(tmp, path)
+            return
+        except Exception as e:
+            last_err = e
+            print(f"[save_checkpoint] attempt {attempt + 1}/3 failed for {path}: {e}", flush=True)
+            if os.path.exists(tmp):
+                os.remove(tmp)
+            _time.sleep(5)
+    raise last_err
 
 
 def dump_json(obj, path: str):

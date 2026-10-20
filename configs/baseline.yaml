@@ -1,0 +1,14 @@
+# Reviewer fix (comment 2): "Have you tried ConvNeXt-Tiny trained with the
+# same split?" -- a plain single-backbone classifier, no quality branch, no
+# gate/mixture-of-experts, no causal/adversarial block, no distillation.
+# Same backbone (convnext_tiny), same ordinal-aware loss, same optimizer
+# schedule and epoch budget as the full model, so any QWK/ECE gap in Table 1
+# is attributable to the architecture, not to a confound in training recipe.
+_base_: base.yaml
+out_dir: runs/baseline
+student:
+  backbone: convnext_tiny
+train:
+  epochs: 30
+  batch_size: 6
+  lr: 3.0e-4

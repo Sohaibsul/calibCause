@@ -12,3 +12,12 @@ data/*.png
 *.log
 *.zip
 *.pdf
+runs/
+*.pt
+*.pth
+*.ckpt
+data/
+REVIEWER_FIXES.md
+__pycache__/
+backups/
+logs/

@@ -1,0 +1,30 @@
+# Real-training attempt to actually close (not just diagnose) the LOEO
+# cross-environment gap, rather than relying only on post-hoc threshold
+# refit. Current stage2_moe.yaml uses fairly gentle adversarial
+# domain-invariance (env_weight=0.3, env_lambda=1.0, 1 warmup epoch) -- this
+# variant pushes the environment discriminator harder so the shared
+# representation is forced to be less environment-identifiable, which is the
+# actual mechanism (Module 1's causal/GRL block) meant to address exactly
+# the cross-dataset grading-standard gap reviewer comment 4 is about.
+#
+# Also folds in the load-balancing fix (reviewer comment 5) since it's an
+# unrelated, already-validated change to the same training loop -- no reason
+# to burn a second full LOEO run just to add it separately.
+#
+# This is a genuine hyperparameter/training change, not a reporting trick:
+# it may or may not improve LOEO-EyePACS QWK over 0.5241. Report whatever it
+# actually gets -- if it doesn't help, that itself is useful information
+# (the domain gap is not simply an adversarial-strength problem), not a
+# result to hide.
+_base_: base.yaml
+out_dir: runs/stage2_strong_inv
+model:
+  quality_mode: calibrated
+train:
+  epochs: 30
+  batch_size: 6
+  lr: 3.0e-4
+  env_weight: 0.6          # was 0.3 -- adversary's loss counts for more
+  env_lambda: 2.0           # was 1.0 -- stronger gradient-reversal push at full ramp-up
+  adv_warmup_epochs: 2       # was 1 -- give the feature extractor a bit longer before the adversary engages
+  load_balance_weight: 0.2   # vascular-expert routing fix, folded in (reviewer comment 5)

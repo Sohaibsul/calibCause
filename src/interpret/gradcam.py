@@ -4,6 +4,15 @@ Answers the question Figure 1 asks: *which pixels does each of the three
 scale-specialised experts attend to?*  One CAM per expert per image, computed
 against that expert's own logit rather than the fused logit, so the maps are
 genuinely per-expert and not just three copies of the fused explanation.
+
+Gate-weighted rendering (fixed 2026-09): each expert's CAM used to be
+independently min-max normalised to [0, 1] before overlaying, which means an
+expert the gate essentially never uses (gate weight near 0) still rendered a
+full-contrast, "confident-looking" heatmap -- indistinguishable from an
+expert the gate actually relies on. The panel is now scaled by that expert's
+own gate weight for the image (opacity ~ contribution to the final
+prediction), and the gate weight is printed on the panel so the routing
+strength is visible at a glance, not just implied by colour.
 """
 from __future__ import annotations
 
@@ -13,7 +22,7 @@ import os
 import numpy as np
 import torch
 import torch.nn.functional as F
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from ..data.datasets import FundusGradingDataset
 from ..data.transforms import IMAGENET_MEAN, IMAGENET_STD
@@ -65,10 +74,21 @@ def per_expert_cams(model, x: torch.Tensor, target: int | None = None):
             "expert_pred": out["expert_logits"][0].argmax(-1).detach().cpu().numpy()}
 
 
-def overlay(img: np.ndarray, cam: np.ndarray, alpha: float = 0.45) -> Image.Image:
+def overlay(img: np.ndarray, cam: np.ndarray, gate_weight: float,
+           alpha: float = 0.45, label: str | None = None) -> Image.Image:
+    """Blend the (already gate-scaled) CAM over the image and stamp the gate
+    weight in the corner, so an expert the gate ignores visibly fades out
+    instead of rendering a false-confidence heatmap."""
     heat = _colorize(cam)
-    blend = (1 - alpha) * img.astype(np.float32) + alpha * heat.astype(np.float32)
-    return Image.fromarray(np.clip(blend, 0, 255).astype(np.uint8))
+    eff_alpha = alpha * float(np.clip(gate_weight, 0.0, 1.0))
+    blend = (1 - eff_alpha) * img.astype(np.float32) + eff_alpha * heat.astype(np.float32)
+    out = Image.fromarray(np.clip(blend, 0, 255).astype(np.uint8))
+    if label is not None:
+        draw = ImageDraw.Draw(out)
+        text = f"{label}\ng={gate_weight:.2f}"
+        draw.rectangle([0, 0, 78, 30], fill=(0, 0, 0))
+        draw.text((3, 2), text, fill=(255, 255, 255))
+    return out
 
 
 def main():
@@ -100,7 +120,8 @@ def main():
         r = per_expert_cams(model, x)
         base = _denorm(s["image"])
         strip = [Image.fromarray(base)] + \
-                [overlay(base, r["cams"][i]) for i in range(len(EXPERT_NAMES))]
+                [overlay(base, r["cams"][i], r["gate_weights"][i], label=EXPERT_NAMES[i])
+                 for i in range(len(EXPERT_NAMES))]
         w, h = strip[0].size
         canvas = Image.new("RGB", (w * len(strip), h))
         for j, im in enumerate(strip):

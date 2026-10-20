@@ -1,0 +1,31 @@
+{
+  "target": {
+    "n_test": 7026,
+    "n_calib_pool": 3512,
+    "n_calib_used": 200,
+    "n_draws": 30,
+    "raw_argmax_qwk": 0.5240857588841699,
+    "default_threshold_qwk": 0.3032875407137685,
+    "refit_qwk_mean": 0.5972699329314006,
+    "refit_qwk_std": 0.013743792761974884,
+    "refit_qwk_min": 0.5634614605520901,
+    "refit_qwk_max": 0.6194513281365024,
+    "delta_vs_default": 0.2939823922176321,
+    "delta_vs_argmax": 0.07318417404723077
+  },
+  "control": {
+    "n_test": 10263,
+    "n_calib_pool": 5131,
+    "n_calib_used": 200,
+    "n_draws": 30,
+    "raw_argmax_qwk": 0.8126013389483675,
+    "default_threshold_qwk": 0.5804165276463138,
+    "refit_qwk_mean": 0.816236041281941,
+    "refit_qwk_std": 0.011566609137621465,
+    "refit_qwk_min": 0.7823340480390549,
+    "refit_qwk_max": 0.8289529418964716,
+    "delta_vs_default": 0.23581951363562725,
+    "delta_vs_argmax": 0.0036347023335735473
+  },
+  "domain_shift_specific_recovery": 0.06954947171365722
+}
